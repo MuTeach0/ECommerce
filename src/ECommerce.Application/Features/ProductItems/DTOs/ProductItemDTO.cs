@@ -10,8 +10,6 @@ public sealed record ProductItemDTO(
     string SKU,
     Guid CategoryId,
     string? CategoryName,
-    Guid SellerId,
-    string? SellerName,
     decimal AverageRating,
     int ReviewsCount
 );

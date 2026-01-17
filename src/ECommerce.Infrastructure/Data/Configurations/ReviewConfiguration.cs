@@ -15,13 +15,11 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
             .HasMaxLength(1000)
             .IsRequired();
 
-        // ربط التقييم بالمنتج (One-to-Many)
         builder.HasOne<ProductItem>()
-            .WithMany() // لو مش عامل Collection للـ Reviews جوه الـ ProductItem
+            .WithMany()
             .HasForeignKey(r => r.ProductItemId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // ربط التقييم بالعميل (حسب جدول الـ Users عندك)
         builder.Property(r => r.CustomerId).IsRequired();
     }
 }

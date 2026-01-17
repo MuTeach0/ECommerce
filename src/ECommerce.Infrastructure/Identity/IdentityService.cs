@@ -2,10 +2,8 @@ using ECommerce.Application.Common.Interfaces;
 using ECommerce.Application.Features.Identity.DTOs;
 using ECommerce.Domain.Common.Results;
 using ECommerce.Domain.Customers;
-using ECommerce.Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Identity;
 
@@ -21,7 +19,6 @@ public class IdentityService(
 
     public async Task<Result<string>> RegisterAsync(string email, string password, string fullName, string phoneNumber)
     {
-        // 1. إنشاء المستخدم في الـ Identity
         var user = new AppUser
         {
             Id = Guid.NewGuid().ToString(),
@@ -41,10 +38,8 @@ public class IdentityService(
 
         try
         {
-            // 2. إضافة الدور (دي بتعمل SaveChanges داخلية)
             await _userManager.AddToRoleAsync(user, "Customer");
 
-            // 3. إنشاء بروفايل العميل
             var customerResult = Customer.Create(
                 Guid.Parse(user.Id),
                 fullName,
@@ -53,13 +48,10 @@ public class IdentityService(
 
             if (customerResult.IsError)
             {
-                // لو فشل الدومين لوجيك، نمسح اليوزر يدوي لضمان النظافة
                 await _userManager.DeleteAsync(user);
                 return (Result<string>)customerResult.Errors;
             }
 
-            // 4. إضافة الكاستمر وعمل SaveChanges
-            // الـ EF هنا هيعمل Transaction أوتوماتيك لضمان الحفظ
             _context.Customers.Add(customerResult.Value);
             await _context.SaveChangesAsync(default);
 
@@ -67,7 +59,6 @@ public class IdentityService(
         }
         catch (Exception ex)
         {
-            // لو حصل أي Error في الداتا بيز، نمسح اليوزر اللي اتكريت فوق
             await _userManager.DeleteAsync(user);
             return (Result<string>)Error.Failure("Registration_Failed", ex.Message);
         }

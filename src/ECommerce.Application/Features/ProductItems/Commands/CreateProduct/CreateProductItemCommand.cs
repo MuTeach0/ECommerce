@@ -10,6 +10,5 @@ public sealed record CreateProductItemCommand(
     decimal CostPrice,
     int StockQuantity,
     string SKU,
-    Guid CategoryId,
-    Guid CustomerId
+    Guid CategoryId
 ) : IRequest<Result<Guid>>;

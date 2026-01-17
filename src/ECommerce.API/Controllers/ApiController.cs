@@ -14,13 +14,11 @@ public abstract class ApiController : ControllerBase
             return Problem();
         }
 
-        // إذا كانت كل الأخطاء من نوع Validation، نرجع ValidationProblem (Status 400)
         if (errors.All(error => error.Type == ErrorKind.Validation))
         {
             return ValidationProblem(errors);
         }
 
-        // في حال وجود أنواع مختلفة، نرجع أول خطأ واجهناه
         return Problem(errors[0]);
     }
 

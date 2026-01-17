@@ -30,10 +30,12 @@ public static class DependencyInjection
     {
         services.AddApiVersioning(options =>
         {
-            options.DefaultApiVersion = new ApiVersion(1, 0);
+            // Default to Version 2.0 (The Single-Vendor Version)
+            options.DefaultApiVersion = new ApiVersion(2, 0);
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ReportApiVersions = true;
-            // إخبار النظام أن الإصدار يأتي في مسار الـ URL
+            
+            // Read version from the URL segment (e.g., api/v2/...)
             options.ApiVersionReader = new UrlSegmentApiVersionReader();
         })
         .AddMvc() // ضروري لربط الـ Constraints مع نظام الـ Routing
@@ -48,7 +50,8 @@ public static class DependencyInjection
 
     public static IServiceCollection AddApiDocumentation(this IServiceCollection services)
     {
-        string[] versions = ["v1"];
+        // Register both versions if you want to keep V1, or just V2 for the new Single-Vendor system
+        string[] versions = ["v1", "v2"];
 
         foreach (var version in versions)
         {

@@ -21,8 +21,6 @@ public class CreateProductItemCommandValidator : AbstractValidator<CreateProduct
             .MustAsync(BeUniqueSKU).WithMessage("This SKU is already in use by another product.");
         RuleFor(v => v.CategoryId).NotEmpty()
             .MustAsync(CategoryExists).WithMessage("The specified Category does not exist.");
-        RuleFor(v => v.CustomerId).NotEmpty()
-            .MustAsync(CustomerExists).WithMessage("The specified Seller does not exist.");
     }
 
     private async Task<bool> BeUniqueSKU(string sku, CancellationToken ct) =>
@@ -30,7 +28,4 @@ public class CreateProductItemCommandValidator : AbstractValidator<CreateProduct
 
     private async Task<bool> CategoryExists(Guid id, CancellationToken ct) =>
         await _context.Categories.AnyAsync(c => c.Id == id, ct);
-
-    private async Task<bool> CustomerExists(Guid id, CancellationToken ct) =>
-        await _context.Customers.AnyAsync(c => c.Id == id, ct);
 }

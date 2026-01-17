@@ -29,15 +29,6 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Navigation(c => c.Orders)
               .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasMany(c => c.OwnedProducts)
-              .WithOne(p => p.Customer)
-              .HasForeignKey(p => p.CustomerId);
-
-
-        builder.Navigation(c => c.OwnedProducts)
-              .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-
         builder.HasMany(c => c.Addresses)
            .WithOne()
            .HasForeignKey(a => a.CustomerId)

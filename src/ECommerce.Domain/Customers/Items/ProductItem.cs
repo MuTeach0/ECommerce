@@ -7,8 +7,8 @@ public sealed class ProductItem : AuditableEntity
 {
     public string Name { get; private set; }
     public string Description { get; private set; }
-    public decimal Price { get; private set; }          // سعر البيع للجمهور
-    public decimal CostPrice { get; private set; }      // تكلفة الشراء (الأساسية للحسابات)
+    public decimal Price { get; private set; }
+    public decimal CostPrice { get; private set; }
     public decimal? DiscountPrice { get; private set; }
     public int StockQuantity { get; private set; }
     public string SKU { get; private set; }
@@ -16,8 +16,6 @@ public sealed class ProductItem : AuditableEntity
     public decimal AverageRating { get; private set; }
     public int ReviewsCount { get; private set; }
     // Relationships
-    public Guid CustomerId { get; private set; } // البائع (Seller)
-    public Customer? Customer { get; private set; }
     public Guid CategoryId { get; private set; }
     public Category? Category { get; set; }
     
@@ -26,7 +24,7 @@ public sealed class ProductItem : AuditableEntity
     private ProductItem() { }
 #pragma warning restore CS8618
 
-    private ProductItem(Guid id, string name, string description, decimal price, decimal costPrice, int stockQuantity, string sku, Guid customerId, Guid categoryId)
+    private ProductItem(Guid id, string name, string description, decimal price, decimal costPrice, int stockQuantity, string sku, Guid categoryId)
         : base(id)
     {
         Name = name;
@@ -35,7 +33,6 @@ public sealed class ProductItem : AuditableEntity
         CostPrice = costPrice; // تعيين التكلفة
         StockQuantity = stockQuantity;
         SKU = sku;
-        CustomerId = customerId;
         CategoryId = categoryId;
         IsActive = true;
     }
@@ -48,7 +45,6 @@ public sealed class ProductItem : AuditableEntity
         decimal costPrice, // أضيفت هنا
         int stockQuantity,
         string sku,
-        Guid customerId,
         Guid categoryId)
     {
         if (string.IsNullOrWhiteSpace(name)) return ProductItemErrors.NameRequired;
@@ -58,7 +54,7 @@ public sealed class ProductItem : AuditableEntity
         if (price < costPrice) return ProductItemErrors.PriceLessThanCost;
         if (string.IsNullOrWhiteSpace(sku)) return ProductItemErrors.SkuRequired;
 
-        return new ProductItem(id, name, description, price, costPrice, stockQuantity, sku, customerId, categoryId);
+        return new ProductItem(id, name, description, price, costPrice, stockQuantity, sku, categoryId);
     }
 
     public Result<Updated> Update(string name, string description, decimal price, decimal costPrice, int stockQuantity, string sku)

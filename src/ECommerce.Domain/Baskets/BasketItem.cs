@@ -31,6 +31,9 @@ public sealed class BasketItem
 
     internal void UpdateQuantity(int quantity)
     {
-        Quantity = quantity;
+        if (quantity > 0)
+        {
+            Quantity = quantity;
+        }
     }
 }

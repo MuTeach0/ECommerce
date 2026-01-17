@@ -18,6 +18,8 @@ public class GetOrderDetailsQueryHandler(
 
         var order = await context.Orders
             .AsNoTracking()
+            .Include(o => o.Customer)
+            .Include(o => o.Address)
             .Include(o => o.Address)
             .Include(o => o.OrderItems)
                 .ThenInclude(i => i.ProductItem)
@@ -33,6 +35,8 @@ public class GetOrderDetailsQueryHandler(
             order.Id,
             order.CreatedAtUtc,
             order.Status.ToString(),
+            order.Customer?.Name ?? "N/A",
+            order.Customer?.PhoneNumber ?? "N/A",
             order.Address?.FullAddress != null
                 ? $"{order.Address.City}, {order.Address.Street}, {order.Address.FullAddress}": "Address not found",
             order.ShippingFee,

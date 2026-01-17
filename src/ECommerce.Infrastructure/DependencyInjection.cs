@@ -23,10 +23,8 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         ArgumentNullException.ThrowIfNull(connectionString);
 
-        // 1. تسجيل الـ Interceptors (للتعامل مع تاريخ الإنشاء والتعديل تلقائياً)
         services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
-        // 2. إعداد قاعدة البيانات
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
@@ -36,7 +34,6 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<ApplicationDbContextInitializer>();
 
-        // 3. إعداد Identity (ضروري جداً قبل الـ Migration)
         services
             .AddIdentityCore<AppUser>(options =>
             {
@@ -49,7 +46,6 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
 
-        // 4. إعداد التوثيق (JWT Authentication)
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -72,14 +68,12 @@ public static class DependencyInjection
             };
         });
 
-        // 5. تسجيل الخدمات الإضافية (Identity Service & Token Provider)
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ITokenProvider, TokenProvider>(); // فعلها عندما تنشئ الكلاس
         services.AddScoped<IBasketService, BasketService>();
-        // 6. الـ Authorization (الأدوار)
+
         services.AddAuthorizationBuilder()
-            .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"))
-            .AddPolicy("SellerOnly", policy => policy.RequireRole("Seller"));
+            .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
         services.AddStackExchangeRedisCache(options =>
         {

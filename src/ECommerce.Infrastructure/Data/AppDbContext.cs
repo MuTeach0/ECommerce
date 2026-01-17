@@ -4,7 +4,6 @@ using ECommerce.Domain.Common;
 using ECommerce.Domain.Customers;
 using ECommerce.Domain.Customers.Items;
 using ECommerce.Domain.Customers.Reviews;
-using ECommerce.Domain.Employees;
 using ECommerce.Domain.Identity;
 using ECommerce.Domain.Orders;
 using ECommerce.Infrastructure.Identity;
@@ -23,7 +22,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IMediator medi
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ProductItem> ProductItems => Set<ProductItem>();
     public DbSet<Order> Orders => Set<Order>();
-    public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Review> Reviews => Set<Review>();
