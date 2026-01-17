@@ -23,7 +23,7 @@ public class CreateProductItemHandler(
         var result = ProductItem.Create(
             Guid.NewGuid(), request.Name, request.Description,
             request.Price, request.CostPrice, request.StockQuantity,
-            request.SKU, request.CustomerId, request.CategoryId);
+            request.SKU, request.CategoryId);
 
         if (result.IsError)
         {

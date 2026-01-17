@@ -1,5 +1,5 @@
 using Asp.Versioning;
-using ECommerce.Application.Features.Baskets.Commands;
+using ECommerce.API.Contracts.Baskets;
 using ECommerce.Application.Features.Baskets.Commands.AddItemToBasket;
 using ECommerce.Application.Features.Baskets.Commands.RemoveItemFromBasket;
 using ECommerce.Application.Features.Baskets.DTOs;
@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ECommerce.API.Controllers;
 
 [Route("api/v{version:apiVersion}/baskets")]
-[ApiVersion("1.0")]
+[ApiVersion("2.0")]
 [Authorize]
 public class BasketsController(ISender sender) : ApiController
 {
@@ -22,7 +22,7 @@ public class BasketsController(ISender sender) : ApiController
     [EndpointSummary("Adds an item to the shopping basket.")]
     [EndpointDescription("Adds a specific product with the given quantity to the current user's basket in Redis.")]
     [EndpointName("AddItemToBasket")]
-    [MapToApiVersion("1.0")]
+    [MapToApiVersion("2.0")]
     public async Task<IActionResult> AddItem([FromBody] AddItemRequest request)
     {
         var command = new AddItemToBasketCommand(request.ProductId, request.Quantity);
@@ -40,7 +40,7 @@ public class BasketsController(ISender sender) : ApiController
     [EndpointSummary("Retrieves the current user's basket.")]
     [EndpointDescription("Returns all items currently in the user's basket along with the total price.")]
     [EndpointName("GetBasket")]
-    [MapToApiVersion("1.0")]
+    [MapToApiVersion("2.0")]
     public async Task<IActionResult> Get()
     {
         var result = await sender.Send(new GetBasketQuery());
@@ -55,14 +55,13 @@ public class BasketsController(ISender sender) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [EndpointSummary("Removes an item from the basket.")]
     [EndpointName("RemoveItemFromBasket")]
+    [MapToApiVersion("2.0")]
     public async Task<IActionResult> RemoveItem(Guid productId)
     {
         var result = await sender.Send(new RemoveItemFromBasketCommand(productId));
 
         return result.Match(
-            _ => NoContent(), // 204 تم الحذف بنجاح ولا يوجد محتوى للإرجاع
+            _ => NoContent(),
             Problem);
     }
 }
-
-public sealed record AddItemRequest(Guid ProductId, int Quantity);

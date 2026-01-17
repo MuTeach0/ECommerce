@@ -23,12 +23,6 @@ public class AuditableEntityInterceptor(IUser user, TimeProvider dateTime) : Sav
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    //public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
-    //{
-    //    UpdateEntities(eventData.Context);
-    //    return base.SavedChanges(eventData, result);
-    //}
-
     private void UpdateEntities(DbContext? context)
     {
         if (context is null) return;
@@ -67,7 +61,6 @@ public class AuditableEntityInterceptor(IUser user, TimeProvider dateTime) : Sav
                 }
             }
         }
-        // throw new NotImplementedException();
     }
 }
 

@@ -1,10 +1,12 @@
-﻿namespace ECommerce.API.Contracts.Products;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ECommerce.API.Contracts.Products;
 
 public sealed record CreateProductRequest(
-    string Name,
+    [Required] string Name,
     string Description,
-    decimal Price,
-    decimal CostPrice,
-    int StockQuantity,
-    string SKU,
-    Guid CategoryId);
+    [Range(0.01, 1000000)] decimal Price,
+    [Range(0.01, 1000000)] decimal CostPrice,
+    [Range(0, 10000)] int StockQuantity,
+    [Required] string SKU,
+    [Required] Guid CategoryId);

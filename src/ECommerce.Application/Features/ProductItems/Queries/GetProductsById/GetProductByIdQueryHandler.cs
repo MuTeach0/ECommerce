@@ -24,8 +24,6 @@ public class GetProductByIdQueryHandler(IAppDbContext context)
                 p.SKU,
                 p.CategoryId,
                 p.Category != null ? p.Category.Name : null,
-                p.CustomerId,
-                p.Customer != null ? p.Customer.Name : null,
                 p.AverageRating,
                 p.ReviewsCount))
             .FirstOrDefaultAsync(ct);

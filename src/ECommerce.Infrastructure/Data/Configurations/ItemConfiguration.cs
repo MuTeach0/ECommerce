@@ -49,12 +49,6 @@ public class ItemConfiguration : IEntityTypeConfiguration<ProductItem>
                .HasForeignKey(i => i.CategoryId)
                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting category if it has items
 
-        // Relation with Customer (One Customer/Seller has many Items)
-        builder.HasOne(i => i.Customer)
-               .WithMany(c => c.OwnedProducts) // Ensure you have "Items" collection in Customer class
-               .HasForeignKey(i => i.CustomerId)
-               .OnDelete(DeleteBehavior.Cascade);
-
        // 6. Cost Price configuration (Internal use only)
        builder.Property(i => i.CostPrice)
        .HasColumnType("decimal(18,2)")

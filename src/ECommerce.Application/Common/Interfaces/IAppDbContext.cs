@@ -2,7 +2,6 @@ using ECommerce.Domain.Categories;
 using ECommerce.Domain.Customers;
 using ECommerce.Domain.Customers.Items;
 using ECommerce.Domain.Customers.Reviews;
-using ECommerce.Domain.Employees;
 using ECommerce.Domain.Identity;
 using ECommerce.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +19,6 @@ public interface IAppDbContext
     public DbSet<Order> Orders { get; }
     public DbSet<Address> Addresses { get; }
     public DbSet<ProductItem> ProductItems { get; }
-    public DbSet<Employee> Employees { get; }
     public DbSet<RefreshToken> RefreshTokens { get; }
     public DbSet<Review> Reviews { get; }
 

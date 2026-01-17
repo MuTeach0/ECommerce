@@ -14,8 +14,8 @@ using System.Security.Claims;
 namespace ECommerce.API.Controllers;
 
 [Route("api/v{version:apiVersion}/orders")]
-[ApiVersion("1.0")]
-[Authorize] // الطلبات تتطلب تسجيل دخول دائماً
+[ApiVersion("2.0")]
+[Authorize]
 public sealed class OrdersController(ISender sender) : ApiController
 {
     [HttpPost]
@@ -25,7 +25,7 @@ public sealed class OrdersController(ISender sender) : ApiController
     [EndpointSummary("Creates a new order for the current user.")]
     [EndpointDescription("Converts the current user's basket into an order and clears the basket.")]
     [EndpointName("CreateOrder")]
-    [MapToApiVersion("1.0")]
+    [MapToApiVersion("2.0")]
     public async Task<IActionResult> Create([FromBody] CreateOrderRequest request, CancellationToken ct)
     {
         // تحويل الطلب الخارجي إلى Command
@@ -35,7 +35,7 @@ public sealed class OrdersController(ISender sender) : ApiController
         var result = await sender.Send(command, ct);
 
         return result.Match(
-            id => CreatedAtAction(nameof(GetById), new { version = "1.0", orderId = id }, id),
+            id => CreatedAtAction(nameof(GetById), new { version = "2.0", orderId = id }, id),
             Problem);
     }
 
@@ -44,7 +44,7 @@ public sealed class OrdersController(ISender sender) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [EndpointSummary("Retrieves the current user's orders.")]
     [EndpointName("GetMyOrders")]
-    [MapToApiVersion("1.0")]
+    [MapToApiVersion("2.0")]
     public async Task<IActionResult> GetMyOrders(CancellationToken ct)
     {
         // استخراج المعرف من التوكن
@@ -62,7 +62,7 @@ public sealed class OrdersController(ISender sender) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [EndpointSummary("Retrieves detailed information about a specific order.")]
     [EndpointName("GetOrderById")]
-    [MapToApiVersion("1.0")]
+    [MapToApiVersion("2.0")]
     public async Task<IActionResult> GetById(Guid orderId, CancellationToken ct)
     {
         var result = await sender.Send(new GetOrderDetailsQuery(orderId), ct);
@@ -71,14 +71,14 @@ public sealed class OrdersController(ISender sender) : ApiController
     }
 
     [HttpPatch("{orderId:guid}/status")]
-    //[Authorize(Roles = "Admin")] // يفضل تفعيلها للأدمن فقط لاحقاً
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [EndpointSummary("Updates the status of an existing order.")]
     [EndpointDescription("Allows changing order status (e.g., Shipped, Cancelled).")]
     [EndpointName("UpdateOrderStatus")]
-    [MapToApiVersion("1.0")]
+    [MapToApiVersion("2.0")]
     public async Task<IActionResult> UpdateStatus(Guid orderId, [FromBody] UpdateStatusRequest request, CancellationToken ct)
     {
         var command = new UpdateOrderStatusCommand(orderId, request.Status);

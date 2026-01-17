@@ -26,7 +26,7 @@ internal class GetProductReviewsQueryHandler(IAppDbContext context)
                 r.Stars,
                 r.Comment,
                 r.CreatedAtUtc,
-                "Verified Customer" // You can join with Users table here to get the real name
+                context.Customers.Where(c => c.Id == r.CustomerId).Select(c => c.Name).FirstOrDefault() ?? "Anonymous"
             ))
             .ToListAsync(ct);
 
