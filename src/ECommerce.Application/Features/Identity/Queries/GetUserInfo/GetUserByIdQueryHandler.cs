@@ -6,19 +6,31 @@ using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Features.Identity.Queries.GetUserInfo;
 
-public class GetUserByIdQueryHandler(ILogger<GetUserByIdQueryHandler> logger, IIdentityService identityService)
+public class GetUserByIdQueryHandler(
+    ILogger<GetUserByIdQueryHandler> logger,
+    IIdentityService identityService,
+    IUser userService) // Injected the Identity Service
     : IRequestHandler<GetUserByIdQuery, Result<AppUserDTO>>
 {
-    private readonly ILogger<GetUserByIdQueryHandler> _logger = logger;
-    private readonly IIdentityService _identityService = identityService;
-
     public async Task<Result<AppUserDTO>> Handle(GetUserByIdQuery request, CancellationToken ct)
     {
-        var getUserByIdResult = await _identityService.GetUserByIdAsync(request.UserId!);
+        // 1. Retrieve current user ID from our service
+        var userId = userService.Id;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            logger.LogWarning("Attempted to retrieve user info without a valid Token ID.");
+            return Error.Unauthorized();
+        }
+
+        // 2. Fetch user details via IdentityService
+        var getUserByIdResult = await identityService.GetUserByIdAsync(userId);
 
         if (getUserByIdResult.IsError)
         {
-            _logger.LogError("User with Id { UserId }{ErrorDetails}", request.UserId, getUserByIdResult.TopError.Description);
+            logger.LogError("Failed to retrieve user with Id {UserId}. Error: {ErrorDetails}",
+                userId,
+                getUserByIdResult.TopError.Description);
 
             return getUserByIdResult.Errors;
         }

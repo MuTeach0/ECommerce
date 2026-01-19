@@ -24,13 +24,12 @@ public sealed class AddressesController(ISender sender) : ApiController
     public async Task<IActionResult> Add([FromBody] AddAddressRequest request, CancellationToken ct)
     {
         // 1. Extract the UserId from Claims to ensure security (User can only add addresses to themselves)
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userIdString, out var customerId))
-            return Unauthorized();
+        //var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //if (!Guid.TryParse(userIdString, out var customerId))
+        //    return Unauthorized();
 
         // 2. Map the request to the command including the extracted customerId
         var command = new AddAddressCommand(
-            customerId,
             request.Title,
             request.City,
             request.Street,
@@ -52,12 +51,12 @@ public sealed class AddressesController(ISender sender) : ApiController
     [MapToApiVersion("2.0")]
     public async Task<IActionResult> GetMyAddresses(CancellationToken ct)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userIdString, out var userId))
-            return Unauthorized();
+        //var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //if (!Guid.TryParse(userIdString, out var userId))
+        //    return Unauthorized();
         
         // Fetches the list of addresses using the GetUserAddressesQuery
-        var result = await sender.Send(new GetUserAddressesQuery(userId), ct);
+        var result = await sender.Send(new GetUserAddressesQuery(), ct);
         return result.Match(Ok, Problem);
     }
 }

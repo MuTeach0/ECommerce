@@ -3,46 +3,58 @@ using ECommerce.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerce.Application.Features.Customers.Commands.AddAddress;
 
 public class AddAddressCommandHandler(
     IAppDbContext context,
-    ILogger<AddAddressCommandHandler> logger)
+    ILogger<AddAddressCommandHandler> logger,
+    IUser user)
     : IRequestHandler<AddAddressCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(AddAddressCommand request, CancellationToken ct)
     {
-        logger.LogInformation("Processing AddAddressCommand for CustomerId: {CustomerId}", request.CustomerId);
+        // Get the current user ID from the Identity Service
+        var userIdString = user.Id;
+
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var customerId))
+        {
+            logger.LogWarning("Unauthorized access attempt or invalid User ID in Token.");
+            return Error.Unauthorized();
+        }
+
+        logger.LogInformation("Processing AddAddressCommand for CustomerId: {CustomerId}", customerId);
 
         try
         {
-            // 1. جلب العميل مع عناوينه الحالية 
-            // الـ Include مهم هنا عشان الـ Collection اللي جوه الـ Entity تتملي
+            // 1. Fetch the customer with their existing addresses
+            // Include is necessary to load the addresses collection into memory
             var customer = await context.Customers
                 .Include(c => c.Addresses)
-                .FirstOrDefaultAsync(c => c.Id == request.CustomerId, ct);
+                .FirstOrDefaultAsync(c => c.Id == customerId, ct);
 
             if (customer is null)
             {
-                logger.LogWarning("Customer not found. CustomerId: {CustomerId}", request.CustomerId);
+                logger.LogWarning("Customer not found. CustomerId: {CustomerId}", customerId);
                 return Error.NotFound("Customer.NotFound", "Customer does not exist.");
             }
 
-            // 2. استخدام ميثود الدومين (هي اللي بتعمل New Address وبتضيفه للـ List)
-            var result = customer.AddAddress(request.Title, request.City, request.Street, request.FullAddress);
+            // 2. Use the Domain Method
+            // This method creates a new Address entity and adds it to the customer's collection
+            var result = customer.AddAddress(
+                request.Title,
+                request.City,
+                request.Street,
+                request.FullAddress);
 
-            if (result.IsError) return result.Errors;
+            if (result.IsError)
+                return result.Errors;
 
-            // 3. الحفظ مباشرة
-            // الـ EF Core هيفهم لوحده إن فيه سجل جديد اتضاف في الـ Addresses Collection
-            // وهيعمل INSERT للعنوان الجديد فقط بدون تعديل الـ Customer
+            // 3. Save Changes
+            // EF Core tracks the new entry in the collection and performs the INSERT automatically
             await context.SaveChangesAsync(ct);
 
-            // جلب الـ ID بتاع العنوان اللي لسه مضاف
+            // Retrieve the ID of the newly added address
             var newAddressId = customer.Addresses.Last().Id;
 
             logger.LogInformation("Address successfully created. AddressId: {AddressId}", newAddressId);
@@ -51,7 +63,7 @@ public class AddAddressCommandHandler(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error adding address for Customer: {CustomerId}", request.CustomerId);
+            logger.LogError(ex, "Error adding address for Customer: {CustomerId}", customerId);
             return Error.Failure("Address.AddFailed", "An unexpected error occurred.");
         }
     }

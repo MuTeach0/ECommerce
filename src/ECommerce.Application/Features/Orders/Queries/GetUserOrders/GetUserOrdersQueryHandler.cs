@@ -8,17 +8,28 @@ using Microsoft.Extensions.Logging;
 namespace ECommerce.Application.Features.Orders.Queries.GetUserOrders;
 
 internal class GetUserOrdersQueryHandler(
-IAppDbContext context,
-ILogger<GetUserOrdersQueryHandler> logger)
-: IRequestHandler<GetUserOrdersQuery, Result<IReadOnlyList<UserOrderDTO>>>
+    IAppDbContext context,
+    ILogger<GetUserOrdersQueryHandler> logger,
+    IUser userService) // Injected IUser service
+    : IRequestHandler<GetUserOrdersQuery, Result<IReadOnlyList<UserOrderDTO>>>
 {
     public async Task<Result<IReadOnlyList<UserOrderDTO>>> Handle(GetUserOrdersQuery request, CancellationToken ct)
     {
-        logger.LogInformation("Fetching orders for user: {UserId}", request.UserId);
+        // 1. Retrieve and validate the current User ID
+        var userIdString = userService.Id;
 
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var customerId))
+        {
+            logger.LogWarning("Unauthorized attempt to fetch orders. User identity is missing or invalid.");
+            return Error.Unauthorized();
+        }
+
+        logger.LogInformation("Fetching orders for user: {UserId}", customerId);
+
+        // 2. Query the database using the secure ID from the token
         var orders = await context.Orders
-            .AsNoTracking() // دايماً استخدم AsNoTracking في الاستعلامات (Read-only) للأداء
-            .Where(o => o.CustomerId == request.UserId)
+            .AsNoTracking() // Use AsNoTracking for read-only performance optimization
+            .Where(o => o.CustomerId == customerId)
             .OrderByDescending(o => o.CreatedAtUtc)
             .Select(o => new UserOrderDTO(
                 o.Id,
@@ -29,7 +40,7 @@ ILogger<GetUserOrdersQueryHandler> logger)
             ))
             .ToListAsync(ct);
 
-        logger.LogInformation("Found {Count} orders for user: {UserId}", orders.Count, request.UserId);
+        logger.LogInformation("Found {Count} orders for user: {UserId}", orders.Count, customerId);
 
         return orders.AsReadOnly();
     }

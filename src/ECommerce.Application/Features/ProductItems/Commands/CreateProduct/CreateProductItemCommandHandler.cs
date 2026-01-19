@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Features.ProductItems.Commands.CreateProduct;
-public class CreateProductItemHandler(
+public class CreateProductItemCommandHandler(
     IAppDbContext context, 
-    ILogger<CreateProductItemHandler> logger) // حقن الـ Logger
+    ILogger<CreateProductItemCommandHandler> logger) // حقن الـ Logger
     : IRequestHandler<CreateProductItemCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateProductItemCommand request, CancellationToken ct)
