@@ -5,18 +5,18 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Application.Features.Baskets.Commands.AddItemToBasket;
-
 public class AddItemToBasketCommandHandler(
-    IAppDbContext context,        // للتعامل مع SQL (المنتجات)
-    IBasketService basketService, // للتعامل مع Redis (السلة)
-    IUser user)                   // لجلب الـ UserId الخاص بالمستخدم الحالي
+    IAppDbContext context,         // For SQL (Product metadata)
+    IBasketService basketService, // For Redis (Fast basket storage)
+    IUser user)                   // For secure User Identity
     : IRequestHandler<AddItemToBasketCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(AddItemToBasketCommand request, CancellationToken ct)
     {
-        // 1. التأكد من وجود المنتج في قاعدة البيانات وجلب بياناته (الاسم، السعر)
+        // 1. Validate product existence and fetch details
         var product = await context.ProductItems
-            .AsNoTracking().Include(p => p.Category) // لو محتاج اسم القسم
+            .AsNoTracking()
+            .Include(p => p.Category) 
             .FirstOrDefaultAsync(p => p.Id == request.ProductId, ct);
 
         if (product is null)
@@ -24,34 +24,36 @@ public class AddItemToBasketCommandHandler(
             return Error.NotFound("Product.NotFound", "The product you're trying to add doesn't exist.");
         }
 
-        // 2. جلب سلة المستخدم الحالية من Redis
-        var userId = user.Id; // الـ UserId هو الـ Key بتاعنا في Redis
+        // 2. Resolve User Identity securely
+        var userId = user.Id; 
         if (string.IsNullOrEmpty(userId)) return Error.Unauthorized();
+
+        // 3. Initial Stock Check
         if (product.StockQuantity < request.Quantity)
         {
             return Error.Validation("Product.LowStock",
                 $"Only {product.StockQuantity} items available in stock.");
         }
-        var basketResult = await basketService.GetBasketAsync(userId);
 
-        // لو السلة مش موجودة (أول مرة يضيف منتج)، نكريت واحدة جديدة
+        // 4. Retrieve or Create Customer Basket from Redis
+        var basketResult = await basketService.GetBasketAsync(userId);
         var basket = basketResult.Match(
             b => b,
             _ => CustomerBasket.Create(userId)
         );
 
+        // 5. Cross-check existing basket quantity + new request against actual stock
         var existingItem = basket.Items.FirstOrDefault(i => i.ProductId == request.ProductId);
         int currentInBasket = existingItem?.Quantity ?? 0;
 
-        // 4. الفحص الذهبي: (الموجود في السلة + اللي عايز يضيفه) هل يتخطى المخزن؟
         if (currentInBasket + request.Quantity > product.StockQuantity)
         {
             return Error.Validation("Product.LowStock",
-                $"You already have {currentInBasket} in basket. " +
+                $"You already have {currentInBasket} in your basket. " +
                 $"Only {product.StockQuantity} available in total.");
         }
 
-        // 3. إنشاء الـ BasketItem (بنمط الـ DDD والـ Result)
+        // 6. Create BasketItem using DDD patterns
         var itemResult = BasketItem.Create(
             product.Id,
             product.Name,
@@ -62,10 +64,10 @@ public class AddItemToBasketCommandHandler(
 
         if (itemResult.IsError) return itemResult.Errors;
 
-        // 4. إضافة المنتج للسلة (الـ Logic ده جوه الـ Domain Entity)
+        // 7. Execute Domain Logic: Add or Update item in basket entity
         basket.AddOrUpdateItem(itemResult.Value);
 
-        // 5. حفظ التعديلات في Redis
+        // 8. Persist changes back to Redis
         var updateResult = await basketService.UpdateBasketAsync(basket);
 
         return updateResult.Match<Result<Guid>>(
