@@ -47,12 +47,7 @@ public sealed class OrdersController(ISender sender) : ApiController
     [MapToApiVersion("2.0")]
     public async Task<IActionResult> GetMyOrders(CancellationToken ct)
     {
-        // استخراج المعرف من التوكن
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userIdString, out var userId))
-            return Unauthorized();
-
-        var result = await sender.Send(new GetUserOrdersQuery(userId), ct);
+        var result = await sender.Send(new GetUserOrdersQuery(), ct);
 
         return result.Match(Ok, Problem);
     }

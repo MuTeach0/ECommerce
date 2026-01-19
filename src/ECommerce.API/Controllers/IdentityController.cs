@@ -57,9 +57,9 @@ public sealed class IdentityController(ISender sender) : ApiController
     [EndpointName("GetCurrentUserClaims")]
     public async Task<IActionResult> GetCurrentUserInfo(CancellationToken ct)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var result = await sender.Send(new GetUserByIdQuery(userId), ct);
+        var result = await sender.Send(new GetUserByIdQuery(), ct);
 
         return result.Match(
             response => Ok(response),

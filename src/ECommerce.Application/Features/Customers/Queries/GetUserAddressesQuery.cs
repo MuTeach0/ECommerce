@@ -4,4 +4,4 @@ using MediatR;
 
 namespace ECommerce.Application.Features.Customers.Queries;
 
-public sealed record GetUserAddressesQuery(Guid CustomerId) : IRequest<Result<IReadOnlyList<AddressDTO>>>;
+public sealed record GetUserAddressesQuery() : IRequest<Result<IReadOnlyList<AddressDTO>>>;
