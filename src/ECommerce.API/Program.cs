@@ -5,7 +5,7 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Serilog Configuration
+// 1. Serilog - يقرأ تلقائياً من appsettings.json
 builder.Host.UseSerilog((context, loggerConfig) =>
     loggerConfig.ReadFrom.Configuration(context.Configuration));
 
@@ -19,25 +19,25 @@ builder.Services
 
 var app = builder.Build();
 
+// 3. Configure HTTP Request Pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi(); // Map both v1 and v2
 
     app.MapScalarApiReference(options =>
     {
-        // Link to the v2 document as the default for Single-Vendor
         options.WithTitle("ECommerce API V2 (Single-Vendor)")
                .WithTheme(ScalarTheme.Moon)
                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-               // This links Scalar specifically to the V2 OpenAPI document
-               .WithOpenApiRoutePattern("/openapi/v2.json");
+               .WithOpenApiRoutePattern("/openapi/v2.json"); // الربط بـ V2
     });
 
+    // تهيئة قاعدة البيانات (Migrations & Seeding)
     await app.InitializeDatabaseAsync();
 }
+
 app.UseCoreMiddlewares(builder.Configuration);
 
-// Map controllers to handle versioned routes
 app.MapControllers();
 
 app.Run();
