@@ -20,6 +20,7 @@ public static class DependencyInjection
     {
         services.AddSingleton(TimeProvider.System);
 
+        // جلب Connection String
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         ArgumentNullException.ThrowIfNull(connectionString);
 
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<ApplicationDbContextInitializer>();
 
+        // إعداد Identity Core
         services
             .AddIdentityCore<AppUser>(options =>
             {
@@ -46,13 +48,18 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
 
+        // إعداد Authentication مع JWT
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(options =>
         {
+            // سيتم جلب الـ Secret من الـ User Secrets والـ Issuer/Audience من appsettings.json
             var jwtSettings = configuration.GetSection("JwtSettings");
+            var secret = jwtSettings["Secret"];
+
+            ArgumentException.ThrowIfNullOrWhiteSpace(secret, "JWT Secret is missing in configuration.");
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
@@ -62,19 +69,19 @@ public static class DependencyInjection
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = jwtSettings["Issuer"],
                 ValidAudience = jwtSettings["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtSettings["Secret"]!)),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
                 ClockSkew = TimeSpan.Zero
             };
         });
 
         services.AddScoped<IIdentityService, IdentityService>();
-        services.AddScoped<ITokenProvider, TokenProvider>(); // فعلها عندما تنشئ الكلاس
+        services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IBasketService, BasketService>();
 
         services.AddAuthorizationBuilder()
             .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
+        // Redis & Hybrid Cache
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = configuration.GetConnectionString("Redis");
@@ -84,8 +91,8 @@ public static class DependencyInjection
         {
             options.DefaultEntryOptions = new HybridCacheEntryOptions
             {
-                Expiration = TimeSpan.FromMinutes(10), // L2, L3
-                LocalCacheExpiration = TimeSpan.FromSeconds(30), // L1
+                Expiration = TimeSpan.FromMinutes(10),
+                LocalCacheExpiration = TimeSpan.FromSeconds(30),
             };
         });
 
