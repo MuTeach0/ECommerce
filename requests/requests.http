@@ -1,0 +1,134 @@
+### Configuration Variables
+@hostname = localhost
+@port = 5050
+@baseUrl = http://{{hostname}}:{{port}}
+@contentType = application/json
+
+# ------------------------------------------------------------
+# 1. Identity - Login
+# ------------------------------------------------------------
+# @name login
+POST {{baseUrl}}/identity/token/generate
+Content-Type: {{contentType}}
+
+{
+    "email": "admin@ecommerce.com",
+    "password": "Seller123!"
+}
+
+### Capture tokens
+@authToken = {{login.response.body.accessToken}}
+
+# ------------------------------------------------------------
+# 2. Categories - CRUD
+# ------------------------------------------------------------
+
+### A. Create Category (Main)
+# @name createMainCategory
+POST {{baseUrl}}/api/v1/categories
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Electronics",
+    "description": "All electronic devices"
+}
+
+@mainCatId = {{createMainCategory.response.body}}
+
+### B. Create Sub-Category (Hierarchy Test)
+# @name createSubCategory
+POST {{baseUrl}}/api/v1/categories
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Laptops",
+    "description": "Gaming and Work laptops",
+    "parentCategoryId": "{{mainCatId}}"
+}
+
+@subCatId = {{createSubCategory.response.body}}
+
+### C. Get All Categories (Cache Test)
+GET {{baseUrl}}/api/v1/categories
+Authorization: Bearer {{authToken}}
+
+### D. Update Category
+PUT {{baseUrl}}/api/v1/categories/{{subCatId}}
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Gaming Laptops",
+    "description": "High performance laptops",
+    "imageUrl": "http://example.com/image.png",
+    "parentCategoryId": "{{mainCatId}}"
+}
+
+# ------------------------------------------------------------
+# 3. Products - CRUD
+# ------------------------------------------------------------
+
+### A. Create Product
+# @name createProduct
+POST {{baseUrl}}/api/v1/products
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Razer Blade 16",
+    "description": "RTX 4090 Gaming Laptop",
+    "price": 3500.00,
+    "costPrice": 3000.00,
+    "stockQuantity": 5,
+    "sku": "RZB-16-4090",
+    "categoryId": "{{subCatId}}"
+}
+
+@productId = {{createProduct.response.body}}
+
+### B. Get Product By ID
+GET {{baseUrl}}/api/v1/products/{{productId}}
+Authorization: Bearer {{authToken}}
+
+### C. Update Product (Stock & Price Test)
+PUT {{baseUrl}}/api/v1/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Razer Blade 16 Updated",
+    "description": "RTX 4090 Gaming Laptop - 2026 Model",
+    "price": 3600.00,
+    "costPrice": 3000.00,
+    "stockQuantity": 10,
+    "sku": "RZB-16-4090-V2",
+    "categoryId": "{{subCatId}}"
+}
+
+### D. Delete Product
+DELETE {{baseUrl}}/api/v1/products/{{productId}}
+Authorization: Bearer {{authToken}}
+
+# ------------------------------------------------------------
+# 4. Business Logic / Validation Tests
+# ------------------------------------------------------------
+
+### Test: Delete Category while it has Products (Should return 409 Conflict)
+DELETE {{baseUrl}}/api/v1/categories/{{subCatId}}
+Authorization: Bearer {{authToken}}
+
+### Test: Update Product with Price < CostPrice (Should return 400 Validation)
+POST {{baseUrl}}/api/v1/products
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Invalid Product",
+    "price": 50,
+    "costPrice": 100,
+    "stockQuantity": 1,
+    "sku": "ERR-1",
+    "categoryId": "{{subCatId}}"
+}

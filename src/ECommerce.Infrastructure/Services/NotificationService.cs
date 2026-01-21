@@ -1,0 +1,35 @@
+using ECommerce.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+
+namespace ECommerce.Infrastructure.Services;
+
+public sealed class NotificationService(ILogger<NotificationService> logger) : INotificationService
+{
+    private const string Message = "You Can Write Your Own Notification Service";
+    private readonly ILogger<NotificationService> _logger = logger;
+
+    public async Task SendEmailAsync(string to, CancellationToken cancellationToken = default)
+    {
+        var at = to.IndexOf('@');
+        var maskedEmail = at > 1
+            ? to[0] + new string('*', at - 2) + to[at - 1] + to[at..]
+            : "*****";
+
+        _logger.LogInformation("[Email] To: {Email} | Message: {Message}", maskedEmail, Message);
+
+        // Simulated email send
+        await Task.CompletedTask;
+    }
+
+    public async Task SendSmsAsync(string phoneNumber, CancellationToken cancellationToken = default)
+    {
+        var masked = phoneNumber.Length >= 4
+            ? new string('*', phoneNumber.Length - 4) + phoneNumber[^4..]
+            : "****";
+
+        _logger.LogInformation("[SMS] To: {Phone} | Message: {Message}", masked, Message);
+
+        // Simulated SMS send
+        await Task.CompletedTask;
+    }
+}

@@ -1,0 +1,81 @@
+using Asp.Versioning;
+using ECommerce.Application.Features.Identity;
+using ECommerce.Application.Features.Identity.Commands.Register;
+using ECommerce.Application.Features.Identity.DTOs;
+using ECommerce.Application.Features.Identity.Queries.GenerateTokens;
+using ECommerce.Application.Features.Identity.Queries.GetUserInfo;
+using ECommerce.Application.Features.Identity.Queries.RefreshTokens;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace ECommerce.API.Controllers;
+
+[Route("identity")]
+[ApiVersionNeutral]
+public sealed class IdentityController(ISender sender) : ApiController
+{
+    [HttpPost("token/generate")]
+    [ProducesResponseType(typeof(TokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [EndpointSummary("Generates an access and refresh token for a valid user.")]
+    [EndpointDescription("Authenticates a user using provided credentials and returns a JWT token pair.")]
+    [EndpointName("GenerateToken")]
+    public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenQuery request, CancellationToken ct)
+    {
+        var result = await sender.Send(request, ct);
+        return result.Match(
+            response => Ok(response),
+            Problem);
+    }
+
+    [HttpPost("token/refresh-token")]
+    [ProducesResponseType(typeof(TokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [EndpointSummary("Refreshes access token using a valid refresh token.")]
+    [EndpointDescription("Exchanges an expired access token and a valid refresh token for a new token pair.")]
+    [EndpointName("RefreshToken")]
+    [ProducesResponseType(typeof(TokenResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenQuery request, CancellationToken ct)
+    {
+        var result = await sender.Send(request, ct);
+        return result.Match(
+            response => Ok(response),
+            Problem);
+    }
+
+    [HttpGet("current-user/claims")]
+    [Authorize]
+    [ProducesResponseType(typeof(AppUserDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [EndpointSummary("Gets the current authenticated user's info.")]
+    [EndpointDescription("Returns user information for the currently authenticated user based on the access token.")]
+    [EndpointName("GetCurrentUserClaims")]
+    public async Task<IActionResult> GetCurrentUserInfo(CancellationToken ct)
+    {
+        //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var result = await sender.Send(new GetUserByIdQuery(), ct);
+
+        return result.Match(
+            response => Ok(response),
+            Problem);
+    }
+
+    [HttpPost("register")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [EndpointSummary("Registers a new user and creates a business profile.")]
+    public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
+    {
+        var result = await sender.Send(command, ct);
+
+        return result.Match(
+            userId => Ok(new { UserId = userId }),
+            Problem);
+    }
+}
