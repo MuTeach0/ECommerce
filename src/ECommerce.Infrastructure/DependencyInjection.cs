@@ -34,7 +34,29 @@ public static class DependencyInjection
 
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<ApplicationDbContextInitializer>();
+        
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(options =>
+        {
+            var jwtSettings = configuration.GetSection("JwtSettings");
 
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                       Encoding.UTF8.GetBytes(jwtSettings["Secret"]!)),
+            };
+        });
+        
         // إعداد Identity Core
         services
             .AddIdentityCore<AppUser>(options =>
@@ -44,37 +66,29 @@ public static class DependencyInjection
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireLowercase = false;
+                options.Password.RequiredUniqueChars = 1;
+                options.SignIn.RequireConfirmedAccount = false;
             })
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
 
-        // إعداد Authentication مع JWT
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(options =>
-        {
-            // سيتم جلب الـ Secret من الـ User Secrets والـ Issuer/Audience من appsettings.json
-            var jwtSettings = configuration.GetSection("JwtSettings");
-            var secret = jwtSettings["Secret"];
+        // services.AddScoped<IAuthorizationHandler, LaborAssignedHandler>();
+        // services.AddAuthorizationBuilder()
+        //       .AddPolicy("ManagerOnly", policy => policy.RequireRole("Manager"))
+        //       .AddPolicy("SelfScopedWorkOrderAccess", policy =>
+        //         policy.Requirements.Add(new LaborAssignedRequirement()));
 
-            ArgumentException.ThrowIfNullOrWhiteSpace(secret, "JWT Secret is missing in configuration.");
+        services.AddScoped<IIdentityService, IdentityService>();
 
-            options.TokenValidationParameters = new TokenValidationParameters
+        services.AddHybridCache(options =>
+        {
+            options.DefaultEntryOptions = new HybridCacheEntryOptions
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings["Issuer"],
-                ValidAudience = jwtSettings["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
-                ClockSkew = TimeSpan.Zero
+                Expiration = TimeSpan.FromMinutes(10),
+                LocalCacheExpiration = TimeSpan.FromSeconds(30),
             };
         });
 
-        services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IBasketService, BasketService>();
 
@@ -85,15 +99,6 @@ public static class DependencyInjection
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = configuration.GetConnectionString("Redis");
-        });
-
-        services.AddHybridCache(options =>
-        {
-            options.DefaultEntryOptions = new HybridCacheEntryOptions
-            {
-                Expiration = TimeSpan.FromMinutes(10),
-                LocalCacheExpiration = TimeSpan.FromSeconds(30),
-            };
         });
 
         return services;
