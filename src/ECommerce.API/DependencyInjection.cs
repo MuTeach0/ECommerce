@@ -230,7 +230,7 @@ public static class DependencyInjection
             }
         });
 
-        // 2. فحص الجاهزية (Readiness): الفحص الكامل الذي كتبته أنت
+        
         app.UseHealthChecks("/health/ready", new HealthCheckOptions
         {
             Predicate = check => check.Tags.Contains("db"), // سيفحص الداتا بيز وكل شيء

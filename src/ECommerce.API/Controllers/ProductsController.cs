@@ -16,6 +16,9 @@ using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 using ECommerce.Domain.Common.Results;
 using ECommerce.API.Contracts.Products.Reviews;
+using ECommerce.Application.Features.ProductItems.Commands.AddProductImage;
+using ECommerce.Application.Features.ProductItems.Commands.RemoveProductImage;
+using ECommerce.Application.Features.ProductItems.Commands.SetMainImage;
 
 namespace ECommerce.API.Controllers;
 
@@ -143,33 +146,84 @@ public sealed class ProductsController(ISender sender, IOutputCacheStore cacheSt
     }
 
     #endregion
+
+    #region Product Images
+
+    [HttpPost("{productId:guid}/images")]
+    [Authorize(Roles = "Admin")]
+    [Consumes("multipart/form-data")] // تحديد نوع المحتوى للرفع
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [EndpointSummary("Admin adds an image to a product.")]
+    public async Task<IActionResult> AddImage(
+        Guid productId,
+        IFormCollection form,
+        [FromQuery] bool isMain,
+        CancellationToken ct)
+    {
+        var files = form.Files.ToList();
+        if (files is null || files.Count == 0)
+        {
+            return BadRequest(new { error = "Please upload an image file." });
+        }
+        var command = new AddProductImageCommand(productId, files, isMain);
+
+        var result = await sender.Send(command, ct);
+
+        // مسح الكاش الخاص بهذا المنتج والقوائم حتى تظهر الصورة الجديدة فوراً
+        if (result.IsSuccess)
+        {
+            await cacheStore.EvictByTagAsync("products-list", ct);
+            await cacheStore.EvictByTagAsync($"product-details-{productId}", ct);
+        }
+
+        return result.Match(
+            imageId => CreatedAtAction(nameof(GetById), new { version = "2.0", productId }, new { ImageId = imageId }),
+            Problem);
+    }
+
+    [HttpDelete("{productId:guid}/images/{imageId:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [EndpointSummary("Admin removes an image from a product.")]
+    public async Task<IActionResult> RemoveImage(
+        Guid productId, 
+        Guid imageId, 
+        CancellationToken ct)
+    {
+        // إرسال الأمر للـ Handler لمعالجة الحذف من Cloudinary والقاعدة
+        var result = await sender.Send(new RemoveProductImageCommand(productId, imageId), ct);
+
+        // مسح الكاش فور النجاح لضمان تحديث البيانات عند المستخدم
+        if (result.IsSuccess)
+        {
+            await cacheStore.EvictByTagAsync("products-list", ct);
+            await cacheStore.EvictByTagAsync($"product-details-{productId}", ct);
+        }
+
+        // في حالة النجاح نرجع 204 NoContent، وفي حالة الخطأ الـ Problem يهتم بالتفاصيل
+        return result.Match(
+            _ => NoContent(), 
+            Problem);
+    }
+
+    [HttpPatch("{productId:guid}/images/{imageId:guid}/set-main")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [EndpointSummary("Admin sets a specific image as the main image for a product.")]
+    public async Task<IActionResult> SetMainImage(Guid productId, Guid imageId, CancellationToken ct)
+    {
+        var result = await sender.Send(new SetMainImageCommand(productId, imageId), ct);
+
+        if (result.IsSuccess)
+        {
+            // مسح الكاش لأن صورة الغلاف تغيرت في القوائم والتفاصيل
+            await cacheStore.EvictByTagAsync("products-list", ct);
+            await cacheStore.EvictByTagAsync($"product-details-{productId}", ct);
+        }
+
+        return result.Match(_ => NoContent(), Problem);
+    }
+    #endregion
 }
-
-//var result = await sender.Send(command);
-
-////return result.Match(
-////    id => CreatedAtAction(
-////        nameof(GetProductReviews),
-////        new { version = "1.0", productId = productId },
-////        id),
-////    Problem);
-//// Using the new MatchAsync extension
-//// Corrected MatchAsync implementation with proper closing braces
-//// We explicitly specify <Guid, IActionResult> to solve the conversion error
-//return await result.MatchAsync<Guid, IActionResult>(
-//    async id =>
-//    {
-//        // Clear cache to show updated data immediately
-//        await cacheStore.EvictByTagAsync("products_list", ct);
-
-//        // Explicitly cast to IActionResult
-//        return (IActionResult)CreatedAtAction(
-//            nameof(GetProductReviews),
-//            new { version = "2.0", productId = productId },
-//            id);
-//    },
-//    errors => {
-//        // Explicitly return as Task<IActionResult>
-//        return Task.FromResult<IActionResult>(Problem(errors));
-//    }
-//);
