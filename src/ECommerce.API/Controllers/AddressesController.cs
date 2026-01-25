@@ -24,9 +24,9 @@ public sealed class AddressesController(ISender sender) : ApiController
     public async Task<IActionResult> Add([FromBody] AddAddressRequest request, CancellationToken ct)
     {
         // 1. Extract the UserId from Claims to ensure security (User can only add addresses to themselves)
-        //var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //if (!Guid.TryParse(userIdString, out var customerId))
-        //    return Unauthorized();
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdString, out var customerId))
+           return Unauthorized();
 
         // 2. Map the request to the command including the extracted customerId
         var command = new AddAddressCommand(
