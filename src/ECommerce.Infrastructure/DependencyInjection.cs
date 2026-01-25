@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Caching.Hybrid;
 using ECommerce.Infrastructure.Services;
+using ECommerce.Infrastructure.Settings;
+using System.Net.Http.Headers;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -72,12 +75,7 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
 
-        // services.AddScoped<IAuthorizationHandler, LaborAssignedHandler>();
-        // services.AddAuthorizationBuilder()
-        //       .AddPolicy("ManagerOnly", policy => policy.RequireRole("Manager"))
-        //       .AddPolicy("SelfScopedWorkOrderAccess", policy =>
-        //         policy.Requirements.Add(new LaborAssignedRequirement()));
-
+        services.Configure<PayPalSettings>(configuration.GetSection(PayPalSettings.SectionName));
         services.AddScoped<IIdentityService, IdentityService>();
 
         services.AddHybridCache(options =>
@@ -91,7 +89,7 @@ public static class DependencyInjection
 
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IBasketService, BasketService>();
-
+        services.AddScoped<IImageService, CloudinaryService>();
         services.AddAuthorizationBuilder()
             .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
@@ -100,6 +98,17 @@ public static class DependencyInjection
         {
             options.Configuration = configuration.GetConnectionString("Redis");
         });
+
+        services.AddHttpClient<IPaymentService, PayPalService>((serviceProvider, client) =>
+    {
+        var settings = serviceProvider.GetRequiredService<IOptions<PayPalSettings>>().Value;
+        
+        client.BaseAddress = new Uri(settings.Environment == "Live" 
+            ? "https://api-m.paypal.com" 
+            : "https://api-m.sandbox.paypal.com");
+            
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+    });
 
         return services;
     }

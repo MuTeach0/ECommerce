@@ -11,5 +11,6 @@ public sealed record ProductItemDTO(
     Guid CategoryId,
     string? CategoryName,
     decimal AverageRating,
-    int ReviewsCount
+    int ReviewsCount,
+    List<ProductImageDTO> Images
 );

@@ -13,6 +13,8 @@ public class GetProductByIdQueryHandler(IAppDbContext context)
     {
         var product = await context.ProductItems
             .AsNoTracking()
+            .Include(p => p.Category)
+            .Include(p => p.Images)
             .Where(p => p.Id == request.ProductId)
             .Select(p => new ProductItemDTO(
                 p.Id,
@@ -25,7 +27,13 @@ public class GetProductByIdQueryHandler(IAppDbContext context)
                 p.CategoryId,
                 p.Category != null ? p.Category.Name : null,
                 p.AverageRating,
-                p.ReviewsCount))
+                p.ReviewsCount,
+                p.Images.Select(img => new ProductImageDTO(
+                    img.Id,
+                    img.ImageUrl,
+                    img.IsMain
+                )).ToList()
+            ))
             .FirstOrDefaultAsync(ct);
 
         if (product is null)

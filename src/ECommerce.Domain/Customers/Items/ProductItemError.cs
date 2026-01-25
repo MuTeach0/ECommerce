@@ -19,4 +19,10 @@ public static class ProductItemErrors
         Error.Validation("Product.InvalidMargin", "Selling price cannot be less than cost price.");
     public static Error NotFound =>
         Error.NotFound("ProductItem.NotFound", "The specified product was not found.");
+
+    public static Error ImageNotFound => 
+        Error.NotFound("ProductImage.NotFound", "The specified image was not found.");
+
+    public static Error MainImageRequired => 
+        Error.Validation("ProductImage.MainImageRequired", "Product must have at least one main image.");
 }

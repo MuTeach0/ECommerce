@@ -11,8 +11,13 @@ public sealed class Address : AuditableEntity
     public string FullAddress { get; private set; }
     public Guid CustomerId { get; private set; }
 
-    private Address() { }
-
+    private Address() 
+    {
+        Title = null!;
+        City = null!;
+        Street = null!;
+        FullAddress = null!;
+    }
     private Address(Guid id, Guid customerId, string title, string city, string street, string fullAddress)
         : base(id)
     {

@@ -6,6 +6,7 @@ using ECommerce.Domain.Customers.Items;
 using ECommerce.Domain.Customers.Reviews;
 using ECommerce.Domain.Identity;
 using ECommerce.Domain.Orders;
+using ECommerce.Domain.Orders.Payments;
 using ECommerce.Infrastructure.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -25,6 +26,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IMediator medi
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

@@ -18,10 +18,14 @@ public sealed class ProductItem : AuditableEntity
     // Relationships
     public Guid CategoryId { get; private set; }
     public Category? Category { get; set; }
-    
+
+    public ICollection<ProductImage> Images { get; set; } = [];
 
 #pragma warning disable CS8618
-    private ProductItem() { }
+    private ProductItem()
+    {
+        Images = [];
+    }
 #pragma warning restore CS8618
 
     private ProductItem(Guid id, string name, string description, decimal price, decimal costPrice, int stockQuantity, string sku, Guid categoryId)
@@ -99,6 +103,40 @@ public sealed class ProductItem : AuditableEntity
         decimal totalStars = (AverageRating * ReviewsCount) + newStars;
         ReviewsCount++;
         AverageRating = Math.Round(totalStars / ReviewsCount, 1); // تقريب لكسر واحد
+    }
+
+    public Result<Success> AddImage(string url, string publicId, bool isMain = false)
+    {
+        // منع تكرار نفس الصورة
+        if (Images.Any(i => i.PublicId == publicId)) 
+            return Error.Conflict("Image.Duplicate", "This image already exists for this product.");
+
+        // إذا كانت هذه أول صورة، نجعلها أساسية تلقائياً
+        if (!Images.Any()) isMain = true;
+        
+        // إذا طلبنا جعلها أساسية، نلغي الأساسية من باقي الصور
+        if (isMain)
+        {
+            foreach (var img in Images) img.UnsetMain();
+        }
+
+        Images.Add(new ProductImage(Guid.NewGuid(), Id, url, publicId, isMain));
+        
+        return Result.Success;
+    }
+
+    public void RemoveImage(Guid imageId)
+    {
+        var image = Images.FirstOrDefault(x => x.Id == imageId);
+        if (image != null)
+        {
+            Images.Remove(image);
+            if (image.IsMain)
+            {
+                var nextMain = Images.FirstOrDefault();
+                nextMain?.SetAsMain();
+            }
+        }
     }
 
     public void UpdateDiscount(decimal? discountPrice) => DiscountPrice = discountPrice;
