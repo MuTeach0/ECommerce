@@ -1,4 +1,4 @@
-using ECommerce.Domain.Categories;
+﻿using ECommerce.Domain.Categories;
 using ECommerce.Domain.Customers;
 using ECommerce.Domain.Customers.Items;
 using ECommerce.Domain.Customers.Reviews;
@@ -6,6 +6,7 @@ using ECommerce.Domain.Identity;
 using ECommerce.Domain.Orders;
 using ECommerce.Domain.Orders.Payments;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -23,6 +24,6 @@ public interface IAppDbContext
     public DbSet<ProductItem> ProductItems { get; }
     public DbSet<RefreshToken> RefreshTokens { get; }
     public DbSet<Review> Reviews { get; }
-
+    //EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class; // ضيف السطر ده
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
