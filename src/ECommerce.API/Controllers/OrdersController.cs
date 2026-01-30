@@ -28,7 +28,6 @@ public sealed class OrdersController(ISender sender) : ApiController
     [MapToApiVersion("2.0")]
     public async Task<IActionResult> Create([FromBody] CreateOrderRequest request, CancellationToken ct)
     {
-        // تحويل الطلب الخارجي إلى Command
         var command = new CreateOrderCommand(
             request.AddressId);
 

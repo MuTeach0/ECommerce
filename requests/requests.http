@@ -12,8 +12,14 @@ POST {{baseUrl}}/identity/token/generate
 Content-Type: {{contentType}}
 
 {
+    "email": "M.ahmed562011@gmail.com",
+    "password": "Mmmmmmmm@"
+}
+
+
+{
     "email": "admin@ecommerce.com",
-    "password": "Seller123!"
+    "password": "Admin123!"
 }
 
 ### Capture tokens

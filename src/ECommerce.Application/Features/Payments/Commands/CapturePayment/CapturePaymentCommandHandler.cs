@@ -15,13 +15,13 @@ public class CapturePaymentCommandHandler(
     {
         var captureResult = await paymentService.CaptureOrderAsync(request.PayPalOrderId);
 
-        if (captureResult.IsError) return captureResult.Errors;
 
         var payment = await context.Payments
             .FirstOrDefaultAsync(p => p.TransactionId == request.PayPalOrderId, ct);
-
         if (payment == null) return PaymentErrors.PaymentNotFound;
 
+        if (payment.Status == PaymentStatus.Completed) return true;
+        if (captureResult.IsError) return captureResult.Errors;
         payment.MarkAsCompleted();
 
         var order = await context.Orders.FindAsync(payment.OrderId);
