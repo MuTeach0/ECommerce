@@ -70,12 +70,21 @@ public class PayPalService(HttpClient httpClient, IOptions<PayPalSettings> setti
     public async Task<Result<bool>> CaptureOrderAsync(string transactionId)
     {
         var token = await GetAccessTokenAsync();
-        if (token is null) return false;
+        if (token is null) return Error.Failure("PayPal.Auth", "Could not authenticate.");
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.PostAsync($"/v2/checkout/orders/{transactionId}/capture", null);
         
-        return response.IsSuccessStatusCode;
+        if (!response.IsSuccessStatusCode) return false;
+
+        // --- التحقق من الـ Status الفعلي ---
+        var content = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(content);
+        
+        // بايبال بيرجع حالة العملية في حقل اسمه status
+        var status = json.RootElement.GetProperty("status").GetString();
+
+        return status == "COMPLETED"; // لو رجع PENDING أو أي حاجة تانية هيعتبر فشل
     }
 }

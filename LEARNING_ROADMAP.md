@@ -2,8 +2,8 @@
 
 > مراجعة شاملة لكل حاجة ناقصة قبل الـ Production
 
-**آخر تحديث:** January 24, 2026
-**حالة المشروع:** 60% مكتمل ✅
+**آخر تحديث:** January 27, 2026
+**حالة المشروع:** 75% مكتمل ✅
 
 ---
 
@@ -11,16 +11,30 @@
 
 ### 🔴 **ضروري فوراً:**
 
-#### 1. **Payment Gateway Integration** ❌
-- Stripe أو PayPal integration
-- Payment Controller endpoints
-- Order → Payment status linking
-- Webhook handling
+#### 1. **Payment Gateway Integration** ✅ **PayPal فقط - مكتمل**
+- [x] PayPal integration (Create & Capture Orders)
+- [x] Payment Controller endpoints (`/paypal/create`, `/paypal/capture`)
+- [x] Order → Payment status linking
+- [ ] Webhook handling (ناقص - Sandbox فقط)
 
-#### 2. **Email Notifications** ❌
-- SMTP Configuration
-- Order/Payment confirmation emails
-- Shipment notifications
+**الحالة الفعلية:**
+- ✓ `PayPalService.cs` مكتمل: GetAccessTokenAsync, CreateOrderAsync, CaptureOrderAsync
+- ✓ `PaymentsController.cs` مع endpoints جاهزة
+- ✓ `Payment.cs` Entity موجود مع TransactionId و Provider fields
+- ✓ AppsettingsPayPal ClientId و ClientSecret مضافة
+- ❌ Webhooks للـ instant payment confirmation غير مدعومة (يمكن بعد Launch)
+
+#### 2. **Email Notifications** ⚠️ **Stub فقط - محتاج SMTP**
+- [ ] SMTP Configuration
+- [ ] Order/Payment confirmation emails
+- [ ] Shipment notifications
+
+**الحالة الفعلية:**
+- ✓ `NotificationService.cs` موجود
+- ⚠️ الخدمة تعمل كـ Mock/Stub (تعمل logging فقط، لا تبعت emails حقيقية)
+- ❌ محتاج إضافة SMTP provider (Gmail, SendGrid, Mailgun, etc)
+- ❌ محتاج email templates
+- **المتوقع:** 2-3 ساعات
 
 #### 3. **Product Images/Media** ✅ **تم الإنجاز بالكامل**
 - [x] Analysis: Multiple images per product (Cloudinary storage)
@@ -44,17 +58,31 @@
 - الـ Cloudinary integration جاهز في appsettings.json
 - الـ Commands والـ Handlers مكتملة: `AddProductImageCommand`, `RemoveProductImageCommand`, `SetMainImageCommand`
 
-#### 4. **Inventory Management** ⚠️
-- Real stock updates عند order creation
-- Prevent overselling
-- Low stock alerts
+#### 4. **Inventory Management** ⚠️ **جزئي - محتاج تحسين**
+- [ ] Real stock updates عند order creation
+- [ ] Prevent overselling logic
+- [ ] Low stock alerts
 
-#### 5. **Invoice Endpoint** ⚠️
-- GET /api/v2/orders/{id}/invoice
-- PDF download support
-- Email invoice option
+**الحالة الفعلية:**
+- ✓ `StockQuantity` field موجود في Product entity
+- ❌ لا يوجد تحديث تلقائي عند order creation
+- ❌ لا يوجد حماية من overselling
+- ❌ لا يوجد system للـ reserved stock
+- **المتوقع:** 1.5-2 ساعات
 
-#### 6. **Security Headers** ⚠️ **جزئياً مُنجز**
+#### 5. **Invoice Endpoint** ⚠️ **QuestPDF جاهز - محتاج تطبيق**
+- [ ] GET /api/v2/orders/{id}/invoice
+- [ ] PDF download support
+- [ ] Email invoice option
+
+**الحالة الفعلية:**
+- ✓ `QuestPDF` مضافة في NuGet packages
+- ❌ لم تُستخدم بعد
+- ❌ محتاج Controller endpoint لـ invoice download
+- ❌ محتاج PDF template design
+- **المتوقع:** 1-1.5 ساعات
+
+#### 6. **Security Headers** ⚠️ **50% مُنجز**
 - [x] HTTPS enforcement (HTTPS Redirection middleware موجود) ✓
 - [ ] HSTS Header (Strict-Transport-Security) ❌
 - [ ] X-Frame-Options (Clickjacking protection) ❌
@@ -63,21 +91,25 @@
 
 **الحالة الفعلية:**
 - ✓ `app.UseHttpsRedirection()` موجود في Program.cs
-- ❌ محتاج إضافة middleware لـ Security Headers
-- **المتوقع:** 30 دقيقة لإضافة SecurityHeadersMiddleware
-
-#### 7. **appsettings.Production.json** ❌
-- هل موجود؟ **لا**
+- ✓ OpenTelemetry مضافة (Tracing + Metrics)
+- ✓ Output Caching مضافة
+- ❌ محتاج إضافة middleware لـ Security Headers الباقية
+- **المتوقع:** 30 دقيقة لإضافة `SecurityH **غير موجود**
 - متحتاج: 
-  - Database connection string
-  - Redis connection string
-  - CORS origins (real domain)
+  - Database connection string (Real Server)
+  - Redis connection string (Real Server)
+  - CORS origins (Production domain)
   - JWT settings (مع production values)
   - Cloudinary credentials
+  - PayPal Environment = Production (not Sandbox)
   - Serilog minimum level = Warning
 
 **الحالة الفعلية:**
-- ✓ appsettings.json موجود مع قيم Development
+- ✓ appsettings.json موجود مع قيم default
+- ✓ appsettings.Development.json موجود 
+- ❌ appsettings.Production.json غير موجود
+- ⚠️ Secrets موجودة في appsettings.json (يجب نقلها إلى Environment Variables)
+- **المتوقع:** 20-30 دقيقةment
 - ✓ appsettings.Development.json موجود 
 - ❌ appsettings.Production.json غير موجود
 
@@ -160,12 +192,12 @@
 | **Logging & Monitoring** | ✅ مكتمل | 100% | Serilog، Health Checks، Request logging |
 | **Caching** | ✅ مكتمل | 100% | Redis + Output Cache |
 | **Product Images** | ✅ مكتمل | 100% | Cloudinary Integration |
-| **Payment Gateway** | ❌ ناقص | 0% | Stripe/PayPal (Priority 1) |
+| **Payment Gateway** | ✅ PayPal فقط | 100% | PayPal مكتمل، Webhooks بعد Launch |
 | **Email Notifications** | ❌ ناقص | 0% | SMTP، Templates (Priority 1) |
-| **Invoice PDF** | ❌ ناقص | 0% | QuestPDF ready (Priority 2) |
+| **Invoice PDF** | ⚠️ جزئي | 30% | QuestPDF موجودة، محتاج endpoint (Priority 2) |
 | **Inventory Advanced** | ⚠️ جزئي | 30% | Basic StockQuantity فقط، محتاج Reserved/Available |
 | **Security Headers** | ⚠️ جزئي | 50% | HTTPS OK، محتاج HSTS/CSP/XFrame |
-| **Production Config** | ⚠️ جزئي | 30% | appsettings.json موجود، محتاج .Production |
+| **Production Config**75 ⚠️ جزئي | 30% | appsettings.json موجود، محتاج .Production |
 
 **النسبة الإجمالية:** ~60% مكتمل ✅
 
@@ -173,27 +205,37 @@
 
 ## 🎯 **الأولويات الفورية (Next Steps)**
 
-### 🔴 **Priority 1: Payment Gateway** (يمنع الـ Launch)
-**الموارد المتاحة:** QuestPDF في project للـ Invoice
+### 🔴 **Priority 1: Email Notifications** (يمنع الـ Launch) ⏳
+**الحالة:** NotificationService موجود لكن Stub فقط
 **الخطوات:**
-1. اختيار Stripe أو PayPal
-2. إنشاء Payment Entity في Domain
-3. ImplementPaymentService
-4. Controller endpoints
-5. Webhook handling
+1. اختيار SMTP Provider (Gmail, SendGrid, Mailgun, etc)
+2. تطبيق SmtpEmailService
+3. Email templates (Order, Payment Confirmation)
+4. Integration مع Order/Payment services
+5. Testing
 
-### 🔴 **Priority 2: Email Notifications** (يمنع الـ Launch)
+**الم� **Priority 3: Inventory Management** (بعد Initial Launch يمكن) ⏳
+**الحالة:** StockQuantity موجود لكن بدون logic للـ decrement/reserve
 **الخطوات:**
-1. SMTP Configuration
-2. EmailService implementation
-3. Email templates
-4. Background jobs (Hangfire or similar)
+1. إضافة ReservedQuantity field في Product
+2. إضافة OrderItem verification قبل creation
+3. Decrement stock عند order confirmation
+4. Low stock alerts
+5. Testing
 
-### 🟡 **Priority 3: Security & Production Config**
+**المدة المتوقعة:** 1.5-2 ساعات
+
+### 🟡 **Priority 4: Invoice PDF Endpoint** (بعد Initial Launch يمكن) ⏳
+**الحالة:** QuestPDF موجودة، محتاج تطبيق الـ endpoint
 **الخطوات:**
-1. appsettings.Production.json
-2. Security Headers Middleware
-3. Environment variables setup
+1. Invoice template design
+2. GET /api/v2/orders/{id}/invoice endpoint
+3. PDF download response
+4. Testing
+
+**المدة المتوقعة:** 1-1.5 ساعات
+
+### 🟢 **Priority 5: Advanced Features** (بعد Launch)
 
 ### 🟡 **Priority 4: Advanced Inventory**
 **الخطوات:**
@@ -240,26 +282,32 @@
 }
 ```
 
----
-
-## 🚀 **الخطوات المتوقعة للإطلاق (Launch Readiness Checklist)**
-
-### تم الإنجاز ✅
-- [x] Database schema & migrations
-- [x] Product management system
-- [x] Shopping cart with Redis
-- [x] Order processing
-- [x] Customer authentication
-- [x] API documentation
+--- (OpenAPI/Scalar)
 - [x] Health checks & monitoring
-- [x] Logging with Serilog
-- [x] Rate limiting
+- [x] Logging with Serilog + Request logging
+- [x] Rate limiting (100 req/min)
 - [x] Product images with Cloudinary
+- [x] Payment Gateway - PayPal (Create & Capture)
+- [x] OpenTelemetry (Tracing & Metrics)
+- [x] Output Caching with tag-based invalidation
+- [x] Audit Trail (CreatedAt, UpdatedAt, CreatedBy, UpdatedBy)
+- [x] SignalR infrastructure
 
-### قيد العمل ⏳
-- [ ] Payment gateway integration (**CRITICAL**)
-- [ ] Email notifications (**CRITICAL**)
-- [ ] Security headers middleware
+### قيد العمل - ضروري قبل Launch ⏳ (BLOCKING)
+- [ ] Email notifications (**CRITICAL** - 2-3 ساعات)
+- [ ] appsettings.Production.json (**CRITICAL** - 20 دقيقة)
+- [ ] Security Headers Middleware (**CRITICAL** - 30 دقيقة)
+
+### يمكن بعد الإطلاق - غير ضروري للـ MVP 📋
+- [ ] Advanced inventory management (Reserve system)
+- [ ] Invoice PDF generation endpoint
+- [ ] PayPal Webhook handling
+- [ ] Discount/Coupon system
+- [ ] Tax calculation
+- [ ] Shipping integration
+- [ ] Real-time notifications (SignalR)
+- [ ] Advanced search/filters
+- [ ] Email invoice optionware
 - [ ] Production configuration file
 
 ### يمكن بعد الإطلاق 📋
@@ -283,26 +331,78 @@
 | **Authentication** | `IdentityController.cs`, `Program.cs` |
 | **Logging** | `DependencyInjection.cs`, `appsettings.json` (Serilog section) |
 | **Health Checks** | `DependencyInjection.cs` (AddAppHealthChecks method) |
-| **Rate Limiting** | `DependencyInjection.cs` (AddAppRateLimiting method) |
-| **CORS** | `DependencyInjection.cs` (AddConfiguredCors method) |
+| **Rate Limiting** | `Depende - PayPal** ✅ **مكتمل**
+- [x] Payment Entity & Configuration (~45 min) ✓
+- [x] PayPalService (~1.5-2 hours) ✓
+- [x] Payment Controller Endpoints (~1 hour) ✓
+- [ ] Webhook Handling (~1 hour) - يمكن بعد Launch
+- [x] Testing (~1 hour) ✓
 
----
-
-### **Phase 1: Product Images** ✅ **تم الإنجاز**
-- [x] ProductImages Entity (~30 min) ✓
+**الملفات الرئيسية:**
+- `PayPalService.cs` - GetAccessTokenAsync, CreateOrderAsync, CaptureOrderAsync
+- `PaymentsController.cs` - Create, Capture, GetPayment endpoints
+- `Payment.cs` - Entity مع TransactionId, Provider, Status
+- `appsettings.json` - PayPal ClientId, ClientSecret, Environmentity (~30 min) ✓
 - [x] ProductImagesConfiguration (~20 min) ✓
 - [x] CloudinaryService Setup (~1 hour) ✓
 - [x] Upload/Delete Endpoints (~45 min) ✓
 - [x] Testing (~30 min) ✓
+IN PROGRESS - CRITICAL**
+- [x] Email Service Interface (INotificationService) ✓
+- [ ] SmtpEmailService Implementation (~1 hour)
+- [ ] SMTP Configuration in appsettings (~20 min)
+- [ ] Email Templates (Order, Payment) (~45 min)
+- [ ] Integration مع Order/Payment services (~30 min)
+- [ ] Testing (~30 min)
+ - CRITICAL**
+- [x] HTTPS Redirection ✓
+- [ ] appsettings.Production.json (~20 min)
+- [ ] SecurityHeadersMiddleware (~30 min)
+  - HSTS (Strict-Transport-Security)
+  - X-Frame-Options
+  - X-Content-Type-Options
+  - Content-Security-Policy
+- [ ] Environment Variables Setup (~20 min)
+- [ ] Secrets Management (User Secrets → Environment) (~20 min)
 
-**التقدير:** 3.5 ساعات ✅ **تم الإنجاز**
+**المتوقع:**
+- إضافة `appsettings.Production.json`
+- إضافة `SecurityHeadersMiddleware.cs` في `Infrastructبعد Launch - غير ضروري الآن**
+- [ ] ReservedQuantity field إضافة (~30 min)
+- [ ] Prevent Overselling Logic (~45 min)
+- [ ] Decrement stock عند order confirmation (~30 min)
+- [ ] Low Stock Alerts (~30 min)
+---
 
-### **Phase 2: Payment Gateway** (4-6 hours) ⏳ **NOT STARTED**
-- [ ] Choose Stripe OR PayPal (~30 min)
-- [ ] Payment Entity & Configuration (~45 min)
-- [ ] StripeService OR PayPalService (~1.5-2 hours)
-- [ ] Payment Controller Endpoints (~1 hour)
-- [ ] Webhook Handling (~1 hour)
+## ⏱️ **التقدير الزمني المتبقي للـ Production**
+
+| المهمة | الوقت | الأولوية |
+|--------|-------|---------|
+| Email Notifications | 2-3 ساعات | 🔴 CRITICAL |
+| appsettings.Production.json | 20 دقيقة | 🔴 CRITICAL |
+| Security Headers Middleware | 30 دقيقة | 🔴 CRITICAL |
+| **الإجمالي** | **~3 ساعات** | **BLOCKING** |
+
+**بعد هذه 3 ساعات، المشروع جاهز للـ Production Launch! 🚀**
+
+---
+
+## 🔒 **ملخص نقاط الأمان (Security Checklist)**
+
+- [x] HTTPS enforcement
+- [ ] HSTS Header
+- [ ] X-Frame-Options
+- [ ] X-Content-Type-Options
+- [ ] Content-Security-Policy
+- [x] JWT Token validation
+- [x] Role-based authorization
+- [ ] Secrets in Environment Variables (not config file)
+- [x] SQL Injection protection (EF Core)
+- [x] CORS configured
+- [x] Rate limiting
+- [x] Health checks endpoint protected endpoint (~30 min)
+- [ ] PDF download response (~15 min)
+- [ ] Testing (~15hour)
 - [ ] Testing (~1 hour)
 
 ### **Phase 3: Email Notifications** (2-3 hours) ⏳ **NOT STARTED**

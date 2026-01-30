@@ -70,7 +70,7 @@ public sealed class PaymentsController(ISender sender) : ApiController
         var result = await sender.Send(new GetOrderPaymentQuery(orderId), ct);
         return result.Match(dto => Ok(MapToResponse(dto)), Problem);
     }
-
+    
     private static PaymentResponse MapToResponse(PaymentDTO dto)
     {
         return new PaymentResponse(

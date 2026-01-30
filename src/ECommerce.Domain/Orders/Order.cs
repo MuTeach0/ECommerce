@@ -92,8 +92,9 @@ public sealed class Order : AuditableEntity
         // 3. فحص الحالات النهائية
         if (Status == OrderStatus.Cancelled || Status == OrderStatus.Delivered)
             return OrderErrors.FinalStateReached;
-
+        if (Status == newStatus) return Result.Updated;
         Status = newStatus;
+        AddDomainEvent(new OrderStatusChangedEvent(Id, newStatus));
         return Result.Updated;
     }
 }
